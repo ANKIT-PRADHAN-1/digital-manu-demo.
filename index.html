@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Digital Menu | Ankit Tech</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #fc8019; --text: #282c3f; --bg: #f4f7f6; }
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 100px; }
+        
+        /* Swiggy Style Header */
+        header { background: white; padding: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header h1 { font-size: 20px; color: var(--primary); }
+        header p { font-size: 12px; color: #686b78; }
+
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        
+        /* Table Number Box */
+        .table-input { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e9e9eb; }
+        .table-input label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 5px; }
+        .table-input input { width: 100%; padding: 10px; border: 1px solid #d4d5d9; border-radius: 8px; outline: none; }
+
+        /* Food Card Design */
+        .item-card { background: white; padding: 15px; border-radius: 16px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; border: 1px solid #e9e9eb; }
+        .item-img { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; background: #eee; }
+        .item-details { flex: 1; }
+        .item-details h3 { font-size: 16px; margin-bottom: 4px; }
+        .item-details p { font-size: 13px; color: #686b78; }
+        
+        /* Quantity Controls */
+        .controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .qty-btn { width: 28px; height: 28px; border: 1px solid #bebfc5; background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .qty-val { font-weight: 600; color: var(--primary); }
+
+        /* Floating Order Button */
+        .order-footer { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); display: none; }
+        .btn-send { background: var(--primary); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: 600; font-size: 16px; cursor: pointer; }
+
+        /* Thank You Modal */
+        #thankYou { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1001; width: 80%; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Ankit's Premium Kitchen</h1>
+    <p>Direct from Kitchen to your Table</p>
+</header>
+
+<div class="container">
+    <div class="table-input">
+        <label>Enter Table Number:</label>
+        <input type="number" id="tableNo" placeholder="E.g. 01, 05, 12">
+    </div>
+
+    <div id="menu-list"></div>
+</div>
+
+<div class="order-footer" id="footer">
+    <button class="btn-send" onclick="placeOrder()">Place Order on WhatsApp</button>
+</div>
+
+<div id="thankYou">
+    <h2 style="color: #2ed573;">✅ Order Placed!</h2>
+    <p style="margin: 15px 0;">Thank you for ordering. Owner has been notified via WhatsApp.</p>
+    <button onclick="location.reload()" style="padding: 8px 20px; background: #eee; border: none; border-radius: 5px;">Back to Menu</button>
+</div>
+
+<script>
+    const whatsappNumber = "917064125152"; // OWNER KA NUMBER DALO
+    const menuData = [
+        { id: 1, name: "Paneer Curry", price: 180, desc: "Soft paneer in rich gravy", img: "https://via.placeholder.com/100" },
+        { id: 2, name: "Hyderabadi Biryani", price: 220, desc: "Aromatic basmati rice with spices", img: "https://via.placeholder.com/100" },
+        { id: 3, name: "Mutton Rogan Josh", price: 350, desc: "Tender mutton cooked to perfection", img: "https://via.placeholder.com/100" },
+        { id: 4, name: "Jeera Rice", price: 120, desc: "Classic steamed cumin rice", img: "https://via.placeholder.com/100" }
+    ];
+
+    let cart = {};
+
+    const menuList = document.getElementById('menu-list');
+    menuData.forEach(item => {
+        menuList.innerHTML += `
+            <div class="item-card">
+                <img src="${item.img}" class="item-img" alt="${item.name}">
+                <div class="item-details">
+                    <h3>${item.name}</h3>
+                    <p>${item.desc}</p>
+                    <p><b>₹${item.price}</b></p>
+                    <div class="controls">
+                        <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                        <span class="qty-val" id="qty-${item.id}">0</span>
+                        <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    function updateQty(id, change) {
+        if (!cart[id]) cart[id] = 0;
+        cart[id] = Math.max(0, cart[id] + change);
+        document.getElementById(`qty-${id}`).innerText = cart[id];
+        
+        const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
+        document.getElementById('footer').style.display = totalItems > 0 ? 'block' : 'none';
+    }
+
+    function placeOrder() {
+        const table = document.getElementById('tableNo').value;
+        if (!table) { alert("Please enter Table Number!"); return; }
+
+        let message = `*--- NEW ORDER ---*%0A*Table No:* ${table}%0A%0A`;
+        let total = 0;
+
+        menuData.forEach(item => {
+            if (cart[item.id] > 0) {
+                message += `▪️ ${item.name} x ${cart[item.id]} = ₹${item.price * cart[item.id]}%0A`;
+                total += item.price * cart[item.id];
+            }
+        });
+
+        message += `%0A*Grand Total: ₹${total}*`;
+        
+        window.open(`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${message}`, '_blank');
+        
+        document.getElementById('thankYou').style.display = 'block';
+    }
+</script>
+</body>
+</html>
